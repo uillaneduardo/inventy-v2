@@ -37,8 +37,8 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 p-6 overflow-y-auto bg-slate-50/70 h-[calc(100vh-3.5rem)]">
-      <div className="max-w-7xl mx-auto">{renderCurrentView()}</div>
+    <main className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto bg-neutral-50/70 h-[calc(100vh-3.5rem)] w-full min-w-0">
+      <div className="max-w-7xl mx-auto w-full">{renderCurrentView()}</div>
     </main>
   );
 };
@@ -46,12 +46,12 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <InventyProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col antialiased selection:bg-slate-900 selection:text-white">
+      <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans flex flex-col antialiased selection:bg-neutral-900 selection:text-white">
         {/* App Shell Header */}
         <Header />
 
         {/* Body Layout: Sidebar + Main Content */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden relative">
           <Sidebar />
           <MainContent />
         </div>

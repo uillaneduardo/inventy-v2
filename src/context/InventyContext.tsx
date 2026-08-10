@@ -45,6 +45,8 @@ interface InventyContextType {
   // Navigation
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
   selectedAssetId: string | null;
   setSelectedAssetId: (id: string | null) => void;
   selectedCollaboratorId: string | null;
@@ -118,6 +120,7 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Navigation
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<string | null>(null);
   const [settingsSubTab, setSettingsSubTab] = useState<string>('pacotes');
@@ -427,6 +430,8 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         organizations,
         activeTab,
         setActiveTab,
+        mobileMenuOpen,
+        setMobileMenuOpen,
         selectedAssetId,
         setSelectedAssetId,
         selectedCollaboratorId,

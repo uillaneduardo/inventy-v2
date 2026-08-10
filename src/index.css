@@ -1,2 +1,51 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+
+/* Design Tokens for Inventy */
+:root {
+  --bg-app: #f9fafb;
+  --surface: #ffffff;
+  --surface-subtle: #f3f4f6;
+  --surface-hover: #f9fafb;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --action-primary: #111827;
+  --action-primary-hover: #1f2937;
+  --accent: #10b981;
+  --accent-bg: #ecfdf5;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+/* Custom Leaflet Map Popup & Marker overrides for clean SaaS aesthetic */
+.inventy-leaflet-popup .leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+  padding: 0 !important;
+}
+
+.inventy-leaflet-popup .leaflet-popup-content {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.inventy-leaflet-popup .leaflet-popup-tip {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.custom-inventy-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.marker-hover-effect:hover {
+  transform: translate(-50%, -100%) scale(1.03);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1) !important;
+}
