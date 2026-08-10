@@ -1,0 +1,6 @@
+{
+  "name": "Inventy",
+  "description": "Plataforma B2B SaaS para controle de inventário e gestão de ativos empresariais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
