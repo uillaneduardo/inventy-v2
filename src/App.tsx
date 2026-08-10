@@ -9,7 +9,7 @@ import { InventoryListView } from './components/inventories/InventoryListView';
 import { AssetListView } from './components/assets/AssetListView';
 import { CollaboratorListView } from './components/collaborators/CollaboratorListView';
 import { MovementListView } from './components/movements/MovementListView';
-import { LocationTreeView } from './components/locations/LocationTreeView';
+import { LocationView } from './components/locations/LocationView';
 import { SettingsLayout } from './components/settings/SettingsLayout';
 
 const MainContent: React.FC = () => {
@@ -28,7 +28,7 @@ const MainContent: React.FC = () => {
       case 'movimentacoes':
         return <MovementListView />;
       case 'localizacoes':
-        return <LocationTreeView />;
+        return <LocationView />;
       case 'configuracoes':
         return <SettingsLayout />;
       default:

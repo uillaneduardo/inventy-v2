@@ -76,6 +76,8 @@ export interface LocationItem {
   responsavel?: string;
   assetCount?: number;
   orgId: string;
+  latitude?: number;
+  longitude?: number;
   children?: LocationItem[];
 }
 

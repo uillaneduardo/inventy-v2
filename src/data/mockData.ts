@@ -258,6 +258,8 @@ export const INITIAL_LOCATIONS: LocationItem[] = [
     endereco: 'Av. das Nações Unidas, 12901 - Brooklin, SP',
     responsavel: 'Carlos Eduardo Silva',
     assetCount: 110,
+    latitude: -23.6000,
+    longitude: -46.6900,
     orgId: 'org-1',
     children: [
       {
@@ -317,6 +319,8 @@ export const INITIAL_LOCATIONS: LocationItem[] = [
     endereco: 'Av. Rio Branco, 156 - Centro, RJ',
     responsavel: 'Rafael Vasconcelos',
     assetCount: 38,
+    latitude: -22.9035,
+    longitude: -43.1729,
     orgId: 'org-1',
     children: [
       {

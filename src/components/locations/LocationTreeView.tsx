@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useInventy } from '../../context/InventyContext';
 import { Modal } from '../common/Modal';
 import { LocationItem, LocationType } from '../../types';
+import { findParentPathIds } from '../../utils/locationUtils';
 import { MapPin, Building2, Building, Layers, DoorClosed, Plus, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 
-export const LocationTreeView: React.FC = () => {
-  const { locations, addLocation, currentOrg, addToast } = useInventy();
+interface LocationTreeViewProps {
+  highlightedLocationId?: string | null;
+  hideHeader?: boolean;
+  onAddLocationClick?: () => void;
+}
+
+export const LocationTreeView: React.FC<LocationTreeViewProps> = ({
+  highlightedLocationId,
+  hideHeader = false,
+  onAddLocationClick,
+}) => {
+  const { locations, addLocation, currentOrg } = useInventy();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [nome, setNome] = useState('');
@@ -21,6 +32,31 @@ export const LocationTreeView: React.FC = () => {
     'loc-rj': true,
   });
 
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-expand path to highlightedLocationId if provided
+  useEffect(() => {
+    if (!highlightedLocationId) return;
+
+    const parentPath = findParentPathIds(locations, highlightedLocationId);
+    if (parentPath.length > 0) {
+      setExpanded((prev) => {
+        const next = { ...prev };
+        parentPath.forEach((id) => {
+          next[id] = true;
+        });
+        return next;
+      });
+
+      // Scroll into view after render
+      setTimeout(() => {
+        if (highlightedRef.current) {
+          highlightedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }, [highlightedLocationId, locations]);
+
   const toggleExpand = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -28,29 +64,33 @@ export const LocationTreeView: React.FC = () => {
   const renderTypeIcon = (type: LocationType) => {
     switch (type) {
       case 'unidade':
-        return <Building2 className="w-4 h-4 text-indigo-600" />;
+        return <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />;
       case 'predio':
-        return <Building className="w-4 h-4 text-blue-600" />;
+        return <Building className="w-4 h-4 text-blue-600 shrink-0" />;
       case 'andar':
-        return <Layers className="w-4 h-4 text-teal-600" />;
+        return <Layers className="w-4 h-4 text-teal-600 shrink-0" />;
       case 'sala':
-        return <DoorClosed className="w-4 h-4 text-emerald-600" />;
+        return <DoorClosed className="w-4 h-4 text-emerald-600 shrink-0" />;
       default:
-        return <MapPin className="w-4 h-4 text-slate-500" />;
+        return <MapPin className="w-4 h-4 text-slate-500 shrink-0" />;
     }
   };
 
   const renderNode = (item: LocationItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = !!expanded[item.id];
+    const isHighlighted = item.id === highlightedLocationId;
 
     return (
       <div key={item.id} className="space-y-1">
         <div
+          ref={isHighlighted ? highlightedRef : null}
           onClick={() => hasChildren && toggleExpand(item.id)}
-          className={`flex items-center justify-between p-2.5 rounded-lg border border-slate-200/80 bg-white hover:bg-slate-50 transition-colors cursor-pointer text-xs ${
-            level > 0 ? 'ml-5' : ''
-          }`}
+          className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer text-xs ${
+            isHighlighted
+              ? 'border-indigo-500 bg-indigo-50/80 ring-2 ring-indigo-500/20 shadow-xs'
+              : 'border-slate-200/80 bg-white hover:bg-slate-50'
+          } ${level > 0 ? 'ml-5' : ''}`}
         >
           <div className="flex items-center gap-2.5">
             {hasChildren ? (
@@ -60,19 +100,25 @@ export const LocationTreeView: React.FC = () => {
                 <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
               )
             ) : (
-              <span className="w-4" />
+              <span className="w-4 shrink-0" />
             )}
 
             {renderTypeIcon(item.tipo)}
 
             <div>
-              <span className="font-bold text-slate-900">{item.nome}</span>
+              <span className={`font-bold ${isHighlighted ? 'text-indigo-950' : 'text-slate-900'}`}>
+                {item.nome}
+              </span>
               {item.endereco && <span className="text-[10px] text-slate-400 block">{item.endereco}</span>}
             </div>
           </div>
 
           <div className="flex items-center gap-3 text-slate-500">
-            {item.responsavel && <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded">Resp: {item.responsavel}</span>}
+            {item.responsavel && (
+              <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded">
+                Resp: {item.responsavel}
+              </span>
+            )}
             {item.assetCount !== undefined && (
               <span className="font-mono text-[10px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                 {item.assetCount} Ativos
@@ -90,26 +136,36 @@ export const LocationTreeView: React.FC = () => {
     );
   };
 
+  const handleOpenModal = () => {
+    if (onAddLocationClick) {
+      onAddLocationClick();
+    } else {
+      setIsModalOpen(true);
+    }
+  };
+
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Estrutura de Localizações</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Hierarquia flexível: Organização → Unidade → Prédio → Andar → Sala/Setor para <strong className="text-slate-700">{currentOrg.name}</strong>
-          </p>
+      {/* Optional Header */}
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Estrutura de Localizações</h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Hierarquia flexível: Organização → Unidade → Prédio → Andar → Sala/Setor para <strong className="text-slate-700">{currentOrg.name}</strong>
+            </p>
+          </div>
+
+          <button
+            onClick={handleOpenModal}
+            className="bg-slate-900 hover:bg-slate-800 text-white shadow-xs rounded-lg px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-emerald-400" /> Adicionar Localização
+          </button>
         </div>
+      )}
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-slate-900 hover:bg-slate-800 text-white shadow-xs rounded-lg px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-        >
-          <Plus className="w-4 h-4 text-emerald-400" /> Adicionar Localização
-        </button>
-      </div>
-
-      {/* Tree */}
+      {/* Tree View Container */}
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-2">
         {locations.map((loc) => renderNode(loc, 0))}
       </div>
@@ -134,6 +190,8 @@ export const LocationTreeView: React.FC = () => {
             });
             setIsModalOpen(false);
             setNome('');
+            setEndereco('');
+            setResponsavel('');
           }}
           className="space-y-3"
         >
