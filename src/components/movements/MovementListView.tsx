@@ -3,7 +3,8 @@ import { useInventy } from '../../context/InventyContext';
 import { MovementTypeBadge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import { MovementType } from '../../types';
-import { ArrowLeftRight, Search, Plus, User, Calendar, CheckCircle2, Laptop } from 'lucide-react';
+import { ArrowLeftRight, Search, Plus, User, Calendar, CheckCircle2, Laptop, Eye, FileCheck2 } from 'lucide-react';
+import { ResponsibilityTermViewerModal } from '../responsibility-terms/ResponsibilityTermViewerModal';
 
 export const MovementListView: React.FC = () => {
   const { movements, assets, collaborators, registerMovement, currentOrg, addToast } = useInventy();
@@ -11,6 +12,7 @@ export const MovementListView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('todos');
   const [isNewMovementModalOpen, setIsNewMovementModalOpen] = useState(false);
+  const [viewerTermId, setViewerTermId] = useState<string | null>(null);
 
   // Form State
   const [selectedAssetId, setSelectedAssetId] = useState(assets[0]?.id || '');
@@ -103,6 +105,7 @@ export const MovementListView: React.FC = () => {
                 <th className="py-3 px-4">Tipo</th>
                 <th className="py-3 px-4">Custódia / Responsável</th>
                 <th className="py-3 px-4">Motivo / Observação</th>
+                <th className="py-3 px-4">Termo A4</th>
                 <th className="py-3 px-4 text-right">Registrado Por</th>
               </tr>
             </thead>
@@ -129,6 +132,20 @@ export const MovementListView: React.FC = () => {
                     )}
                   </td>
                   <td className="py-3 px-4 text-slate-600 max-w-xs truncate">{mov.motivo}</td>
+                  <td className="py-3 px-4">
+                    {mov.responsibilityTermId ? (
+                      <button
+                        type="button"
+                        onClick={() => setViewerTermId(mov.responsibilityTermId || null)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] rounded transition shadow-2xs"
+                      >
+                        <FileCheck2 className="w-3 h-3 text-emerald-600" />
+                        <span>Ver Termo</span>
+                      </button>
+                    ) : (
+                      <span className="text-slate-400 text-[10px] italic">—</span>
+                    )}
+                  </td>
                   <td className="py-3 px-4 text-right text-slate-500 text-[11px] font-medium">{mov.usuarioRegistro}</td>
                 </tr>
               ))}
@@ -228,6 +245,11 @@ export const MovementListView: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ResponsibilityTermViewerModal
+        termId={viewerTermId}
+        onClose={() => setViewerTermId(null)}
+      />
     </div>
   );
 };

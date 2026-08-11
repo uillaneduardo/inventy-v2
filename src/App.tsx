@@ -11,6 +11,7 @@ import { CollaboratorListView } from './components/collaborators/CollaboratorLis
 import { MovementListView } from './components/movements/MovementListView';
 import { LocationView } from './components/locations/LocationView';
 import { SettingsLayout } from './components/settings/SettingsLayout';
+import { ResponsibilityTermList } from './components/responsibility-terms/ResponsibilityTermList';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useInventy();
@@ -27,6 +28,8 @@ const MainContent: React.FC = () => {
         return <CollaboratorListView />;
       case 'movimentacoes':
         return <MovementListView />;
+      case 'termos':
+        return <ResponsibilityTermList />;
       case 'localizacoes':
         return <LocationView />;
       case 'configuracoes':

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useInventy } from '../../context/InventyContext';
 import { Modal } from '../common/Modal';
 import { Collaborator } from '../../types';
+import { ResponsibilityTermViewerModal } from '../responsibility-terms/ResponsibilityTermViewerModal';
 import {
   Users,
   Search,
@@ -14,14 +15,18 @@ import {
   UserCheck,
   Shield,
   Briefcase,
+  FileCheck2,
+  Eye,
+  MapPin,
 } from 'lucide-react';
 
 export const CollaboratorListView: React.FC = () => {
-  const { collaborators, assets, addCollaborator, currentOrg, setSelectedAssetId, setActiveTab } = useInventy();
+  const { collaborators, assets, responsibilityTerms, addCollaborator, currentOrg, setSelectedAssetId, setActiveTab } = useInventy();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCollabForModal, setSelectedCollabForModal] = useState<Collaborator | null>(null);
   const [isNewCollabModalOpen, setIsNewCollabModalOpen] = useState(false);
+  const [viewerTermId, setViewerTermId] = useState<string | null>(null);
 
   // New Collaborator Form
   const [nome, setNome] = useState('');
@@ -234,6 +239,15 @@ export const CollaboratorListView: React.FC = () => {
                 <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                   CPF: {selectedCollabForModal.cpf} • Unidade: {selectedCollabForModal.unidade}
                 </p>
+                {selectedCollabForModal.enderecoLogradouro && (
+                  <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-slate-400" />
+                    <span>
+                      {selectedCollabForModal.enderecoLogradouro}, {selectedCollabForModal.enderecoNumero} -{' '}
+                      {selectedCollabForModal.enderecoBairro}, {selectedCollabForModal.enderecoCidade}/{selectedCollabForModal.enderecoEstado}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -276,9 +290,61 @@ export const CollaboratorListView: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Termos de Responsabilidade Vinculados */}
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <FileCheck2 className="w-4 h-4 text-emerald-600" />
+                <span>Termos de Responsabilidade (A4):</span>
+              </h4>
+
+              {responsibilityTerms.filter((t) => t.collaboratorId === selectedCollabForModal.id).length === 0 ? (
+                <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                  Nenhum termo de responsabilidade registrado para este colaborador.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {responsibilityTerms
+                    .filter((t) => t.collaboratorId === selectedCollabForModal.id)
+                    .map((term) => (
+                      <div
+                        key={term.id}
+                        className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-emerald-800">{term.codigo}</span>
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-white border border-slate-200">
+                              {term.snapshot.movement.type}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            Ativo: <strong className="text-slate-800">{term.snapshot.asset.patrimonio}</strong> ({term.snapshot.asset.name})
+                          </p>
+                          <p className="text-[10px] text-slate-400">Data: {term.createdAt.substring(0, 10)}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setViewerTermId(term.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 font-bold text-xs rounded transition shadow-2xs"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Ver Termo</span>
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
         </Modal>
       )}
+
+      <ResponsibilityTermViewerModal
+        termId={viewerTermId}
+        onClose={() => setViewerTermId(null)}
+      />
 
       {/* Modal: Novo Colaborador */}
       <Modal

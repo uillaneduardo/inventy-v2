@@ -684,41 +684,186 @@ export const INITIAL_MOVEMENTS: Movement[] = [
   },
 ];
 
-export const INITIAL_PERMISSION_GROUPS: PermissionGroup[] = [
+export const INITIAL_TERM_TEMPLATES: TermTemplate[] = [
   {
-    id: 'perm-admin',
-    nome: 'Administrador do Sistema',
-    descricao: 'Acesso total e irrestrito a todos os módulos, configurações e movimentações.',
-    usuariosCount: 1,
-    permissoes: [
-      'Ativos (Criar, Ler, Atualizar, Excluir, Exportar)',
-      'Pacotes de Aplicação (Criar, Editar, Excluir, Aplicar)',
-      'Credenciais (Visualizar, Copiar, Gerenciar)',
-      'Movimentações (Atribuir, Devolver, Transferir)',
-      'Configurações da Organização e Usuários',
-    ],
+    id: 'tpl-atribuicao-padrao',
+    nome: 'Termo Padrão de Entrega e Guarda de Equipamento (Atribuição)',
+    titulo: 'TERMO DE RESPONSABILIDADE E GUARDA DE EQUIPAMENTO',
+    tiposMovimentacao: ['Atribuição'],
+    textoPadrao: `Pelo presente instrumento, a empresa {{organization.name}}, inscrita no CNPJ sob o nº {{organization.cnpj}}, declara que entregou nesta data ao(à) colaborador(a) {{collaborator.name}}, inscrito(a) no CPF sob o nº {{collaborator.cpf}}, ocupante do cargo de {{collaborator.role}} no departamento {{collaborator.department}}, para uso exclusivo em atividades profissionais, o equipamento e respectivos acessórios abaixo descritos:
+
+O(A) colaborador(a) declara haver recebido o equipamento em perfeito estado de funcionamento e conservação, comprometendo-se a:
+1. Utilizar o bem exclusivamente para os fins profissionais vinculados às suas atribuições na {{organization.name}};
+2. Zelar pela integridade física e operacional do equipamento, guardando-o com segurança;
+3. Não instalar softwares não autorizados ou efetuar alterações de hardware/firmware sem prévia autorização da TI;
+4. Comunicar imediatamente à equipe de Tecnologia da Informação qualquer avaria, furto, roubo ou extravio do equipamento;
+5. Restituir integralmente o equipamento e seus acessórios no momento do desligamento ou mediante solicitação prévia da empresa.
+
+Em caso de dano decorrente de dolo ou culpa comprovada (uso inadequado, negligência ou imperícia), o(a) colaborador(a) autoriza expressamente a apuração de responsabilidade nos termos do art. 462, § 1º da CLT.`,
+    logoAlign: 'esquerda',
+    logoWidth: 140,
+    tituloAlign: 'centro',
+    rodape: 'Documento emitido eletronicamente pelo Sistema Inventy em {{movement.date}}. Via da Empresa e do Colaborador.',
+    camposVisiveis: {
+      showCpf: true,
+      showPhone: true,
+      showEmail: true,
+      showRole: true,
+      showDepartment: true,
+      showAddress: true,
+      showBrandModel: true,
+      showSerial: true,
+      showPatrimonio: true,
+      showAccessories: true,
+      showObservations: true,
+    },
+    ativo: true,
+    orgId: 'org-1',
+    updatedAt: '2026-08-01 10:00:00',
   },
   {
-    id: 'perm-operator',
-    nome: 'Operador de Inventário / T.I.',
-    descricao: 'Acesso para cadastrar ativos, realizar movimentações e aplicar pacotes de aplicação.',
-    usuariosCount: 2,
-    permissoes: [
-      'Ativos (Criar, Ler, Atualizar, Exportar)',
-      'Pacotes de Aplicação (Aplicar em Ativo)',
-      'Credenciais (Visualizar, Copiar)',
-      'Movimentações (Atribuir, Devolver, Transferir)',
-    ],
+    id: 'tpl-devolucao-padrao',
+    nome: 'Termo Padrão de Devolução e Baixa de Custódia (Devolução)',
+    titulo: 'TERMO DE DEVOLUÇÃO E QUITAÇÃO DE EQUIPAMENTO',
+    tiposMovimentacao: ['Devolução'],
+    textoPadrao: `A empresa {{organization.name}} (CNPJ nº {{organization.cnpj}}) atesta que o(a) colaborador(a) {{collaborator.name}}, portador(a) do CPF nº {{collaborator.cpf}}, efetuou nesta data a devolução do equipamento patrimônio {{asset.patrimonio}} ({{asset.name}}), até então sob sua custódia.
+
+A equipe de TI efetuou a conferência física do ativo e constatou a entrega juntamente com os seus acessórios associados. Este termo concede a quitação de responsabilidade de guarda do referido equipamento ao colaborador.`,
+    logoAlign: 'esquerda',
+    logoWidth: 140,
+    tituloAlign: 'centro',
+    rodape: 'Documento de baixa emitido pelo Sistema Inventy em {{movement.date}}.',
+    camposVisiveis: {
+      showCpf: true,
+      showPhone: false,
+      showEmail: false,
+      showRole: true,
+      showDepartment: true,
+      showAddress: false,
+      showBrandModel: true,
+      showSerial: true,
+      showPatrimonio: true,
+      showAccessories: true,
+      showObservations: true,
+    },
+    ativo: true,
+    orgId: 'org-1',
+    updatedAt: '2026-08-01 10:00:00',
   },
   {
-    id: 'perm-viewer',
-    nome: 'Leitor / Auditor',
-    descricao: 'Acesso apenas de leitura aos inventários e relatórios.',
-    usuariosCount: 5,
-    permissoes: [
-      'Ativos (Apenas Leitura)',
-      'Inventários (Apenas Leitura)',
-      'Relatórios e Exportação',
-    ],
+    id: 'tpl-transferencia-padrao',
+    nome: 'Termo Padrão de Transferência e Troca de Custódia',
+    titulo: 'TERMO DE TRANSFERÊNCIA DE CUSTÓDIA DE EQUIPAMENTO',
+    tiposMovimentacao: ['Transferência'],
+    textoPadrao: `Por meio deste termo, registra-se a transferência de guarda e responsabilidade do equipamento {{asset.name}} (Patrimônio {{asset.patrimonio}}), pertencente à {{organization.name}}, alocado no local {{movement.location}}.`,
+    logoAlign: 'esquerda',
+    logoWidth: 140,
+    tituloAlign: 'centro',
+    rodape: 'Termo de transferência registrado eletronicamente no Inventy em {{movement.date}}.',
+    camposVisiveis: {
+      showCpf: true,
+      showPhone: true,
+      showEmail: true,
+      showRole: true,
+      showDepartment: true,
+      showAddress: false,
+      showBrandModel: true,
+      showSerial: true,
+      showPatrimonio: true,
+      showAccessories: true,
+      showObservations: true,
+    },
+    ativo: true,
+    orgId: 'org-1',
+    updatedAt: '2026-08-01 10:00:00',
   },
 ];
+
+export const INITIAL_RESPONSIBILITY_TERMS: ResponsibilityTerm[] = [
+  {
+    id: 'term-101',
+    codigo: 'TR-2026-00101',
+    movementId: 'mov-101',
+    assetId: 'ast-1',
+    collaboratorId: 'col-4',
+    templateId: 'tpl-atribuicao-padrao',
+    createdBy: 'Carlos Eduardo Silva',
+    createdAt: '2026-07-05 15:00:00',
+    orgId: 'org-1',
+    snapshot: {
+      organization: {
+        name: 'Inventy Tecnologia e Sistemas S.A.',
+        cnpj: '12.345.678/0001-90',
+      },
+      collaborator: {
+        id: 'col-4',
+        name: 'Beatriz Martins Mendes',
+        cpf: '334.551.229-08',
+        role: 'Especialista de Engenharia & CAD',
+        department: 'Engenharia de Projetos',
+        unidade: 'Unidade São Paulo (Sede)',
+        phone: '(11) 97722-1100',
+        email: 'beatriz.mendes@inventy.com.br',
+        fullAddress: 'Av. Paulista, 1000, nº 42 - Bela Vista, São Paulo/SP',
+      },
+      asset: {
+        id: 'ast-1',
+        patrimonio: 'PAT-2026-0042',
+        name: 'Dell XPS 15 9530 i9 32GB',
+        marca: 'Dell',
+        modelo: 'XPS 15 9530',
+        numeroSerie: '8HG39X2-BR',
+        categoriaNome: 'Notebooks & MacBooks',
+        valor: 14500.00,
+      },
+      movement: {
+        type: 'Atribuição',
+        date: '2026-07-05 15:00:00',
+        location: 'Unidade São Paulo (Sede) > Prédio A > 4º Andar > Sala Engenharia (402)',
+        motivo: 'Entrega do kit de engenharia para nova colaboradora de projetos.',
+      },
+      accessoriesDelivered: [
+        { id: 'acc-1', nome: 'Carregador USB-C Dell 130W Original', incluso: true },
+        { id: 'acc-2', nome: 'Capa Protetora de Neoprene 15"', incluso: true },
+        { id: 'acc-3', nome: 'Mouse Sem Fio Dell MS3320W', incluso: true },
+      ],
+      template: {
+        titulo: 'TERMO DE RESPONSABILIDADE E GUARDA DE EQUIPAMENTO',
+        textoInterpolado: `Pelo presente instrumento, a empresa Inventy Tecnologia e Sistemas S.A., inscrita no CNPJ sob o nº 12.345.678/0001-90, declara que entregou nesta data ao(à) colaborador(a) Beatriz Martins Mendes, inscrito(a) no CPF sob o nº 334.551.229-08, ocupante do cargo de Especialista de Engenharia & CAD no departamento Engenharia de Projetos, para uso exclusivo em atividades profissionais, o equipamento e respectivos acessórios abaixo descritos:
+
+O(A) colaborador(a) declara haver recebido o equipamento em perfeito estado de funcionamento e conservação, comprometendo-se a:
+1. Utilizar o bem exclusivamente para os fins profissionais vinculados às suas atribuições na Inventy Tecnologia e Sistemas S.A.;
+2. Zelar pela integridade física e operacional do equipamento, guardando-o com segurança;
+3. Não instalar softwares não autorizados ou efetuar alterações de hardware/firmware sem prévia autorização da TI;
+4. Comunicar imediatamente à equipe de Tecnologia da Informação qualquer avaria, furto, roubo ou extravio do equipamento;
+5. Restituir integralmente o equipamento e seus acessórios no momento do desligamento ou mediante solicitação prévia da empresa.
+
+Em caso de dano decorrente de dolo ou culpa comprovada (uso inadequado, negligência ou imperícia), o(a) colaborador(a) autoriza expressamente a apuração de responsabilidade nos termos do art. 462, § 1º da CLT.`,
+        logoAlign: 'esquerda',
+        logoWidth: 140,
+        tituloAlign: 'centro',
+        rodapeInterpolado: 'Documento emitido eletronicamente pelo Sistema Inventy em 2026-07-05. Via da Empresa e do Colaborador.',
+        camposVisiveis: {
+          showCpf: true,
+          showPhone: true,
+          showEmail: true,
+          showRole: true,
+          showDepartment: true,
+          showAddress: true,
+          showBrandModel: true,
+          showSerial: true,
+          showPatrimonio: true,
+          showAccessories: true,
+          showObservations: true,
+        },
+      },
+      signers: {
+        operatorName: 'Carlos Eduardo Silva',
+        operatorTitle: 'Gestão de Tecnologia / Ativos',
+        collaboratorName: 'Beatriz Martins Mendes',
+        collaboratorTitle: 'Especialista de Engenharia & CAD — Engenharia de Projetos',
+      },
+    },
+  },
+];
+

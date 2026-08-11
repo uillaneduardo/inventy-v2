@@ -48,6 +48,7 @@ export interface Asset {
   dataGarantia?: string;
   orgId: string;
   appliedPackagesCount?: number;
+  acessorios?: { id: string; nome: string; inclusoPadrao?: boolean }[];
 }
 
 export interface Collaborator {
@@ -63,6 +64,11 @@ export interface Collaborator {
   foto?: string;
   orgId: string;
   assignedAssetsCount?: number;
+  enderecoLogradouro?: string;
+  enderecoNumero?: string;
+  enderecoBairro?: string;
+  enderecoCidade?: string;
+  enderecoEstado?: string;
 }
 
 export type LocationType = 'unidade' | 'predio' | 'andar' | 'sala';
@@ -151,6 +157,110 @@ export interface Movement {
   novaLocalizacao?: string;
   usuarioRegistro: string;
   motivo: string;
+  orgId: string;
+  responsibilityTermId?: string;
+  acessoriosEnvolvidos?: string[];
+}
+
+export type TermAlign = 'esquerda' | 'centro' | 'direita';
+
+export interface TermFieldOptions {
+  showCpf: boolean;
+  showPhone: boolean;
+  showEmail: boolean;
+  showRole: boolean;
+  showDepartment: boolean;
+  showAddress: boolean;
+  showBrandModel: boolean;
+  showSerial: boolean;
+  showPatrimonio: boolean;
+  showAccessories: boolean;
+  showObservations: boolean;
+}
+
+export interface TermTemplate {
+  id: string;
+  nome: string;
+  titulo: string;
+  tiposMovimentacao: MovementType[];
+  textoPadrao: string;
+  logoUrl?: string;
+  logoAlign: TermAlign;
+  logoWidth?: number;
+  tituloAlign: TermAlign;
+  rodape?: string;
+  camposVisiveis: TermFieldOptions;
+  ativo: boolean;
+  orgId: string;
+  updatedAt: string;
+}
+
+export interface TermSnapshotData {
+  organization: {
+    name: string;
+    cnpj: string;
+    logo?: string;
+  };
+  collaborator: {
+    id: string;
+    name: string;
+    cpf: string;
+    role: string;
+    department: string;
+    unidade?: string;
+    phone?: string;
+    email?: string;
+    fullAddress?: string;
+  };
+  asset: {
+    id: string;
+    patrimonio: string;
+    name: string;
+    marca: string;
+    modelo: string;
+    numeroSerie: string;
+    categoriaNome: string;
+    valor?: number;
+  };
+  movement: {
+    type: MovementType;
+    date: string;
+    location: string;
+    motivo: string;
+  };
+  accessoriesDelivered: {
+    id: string;
+    nome: string;
+    incluso: boolean;
+  }[];
+  template: {
+    titulo: string;
+    textoInterpolado: string;
+    logoUrl?: string;
+    logoAlign: TermAlign;
+    logoWidth?: number;
+    tituloAlign: TermAlign;
+    rodapeInterpolado?: string;
+    camposVisiveis: TermFieldOptions;
+  };
+  signers: {
+    operatorName: string;
+    operatorTitle: string;
+    collaboratorName: string;
+    collaboratorTitle: string;
+  };
+}
+
+export interface ResponsibilityTerm {
+  id: string;
+  codigo: string;
+  movementId: string;
+  assetId: string;
+  collaboratorId: string;
+  templateId: string;
+  createdBy: string;
+  createdAt: string;
+  snapshot: TermSnapshotData;
   orgId: string;
 }
 

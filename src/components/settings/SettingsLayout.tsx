@@ -9,6 +9,7 @@ import {
   FolderTree,
   Tag as TagIcon,
   Package,
+  FileCheck2,
   Plus,
   Trash2,
   Edit2,
@@ -17,6 +18,7 @@ import {
   AlertCircle,
   Layers,
 } from 'lucide-react';
+import { ResponsibilityTermList } from '../responsibility-terms/ResponsibilityTermList';
 
 export const SettingsLayout: React.FC = () => {
   const {
@@ -141,6 +143,7 @@ export const SettingsLayout: React.FC = () => {
     { id: 'categorias', label: 'Categorias', icon: FolderTree },
     { id: 'tags', label: 'Tags', icon: TagIcon },
     { id: 'pacotes', label: 'Pacotes de Aplicação', icon: Package },
+    { id: 'termos', label: 'Termos de Responsabilidade', icon: FileCheck2 },
   ];
 
   return (
@@ -413,6 +416,9 @@ export const SettingsLayout: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* SUBTAB 7: Termos de Responsabilidade */}
+      {settingsSubTab === 'termos' && <ResponsibilityTermList />}
 
       {/* MODAL: CRIAR OU EDITAR PACOTE DE APLICAÇÃO */}
       <Modal

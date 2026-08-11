@@ -14,6 +14,8 @@ import {
   Credential,
   AssetStatus,
   MovementType,
+  TermTemplate,
+  ResponsibilityTerm,
 } from '../types';
 import {
   INITIAL_ORGANIZATIONS,
@@ -27,7 +29,10 @@ import {
   INITIAL_PACKAGE_APPLICATIONS,
   INITIAL_ASSETS,
   INITIAL_MOVEMENTS,
+  INITIAL_TERM_TEMPLATES,
+  INITIAL_RESPONSIBILITY_TERMS,
 } from '../data/mockData';
+import { createTermSnapshot } from '../utils/termUtils';
 
 export interface ToastMessage {
   id: string;
@@ -94,7 +99,19 @@ interface InventyContextType {
     novoResponsavelId?: string;
     novaLocalizacaoId?: string;
     motivo: string;
-  }) => void;
+    templateId?: string;
+    acessoriosSelecionados?: string[];
+  }) => string | undefined;
+
+  // Responsibility Terms
+  termTemplates: TermTemplate[];
+  responsibilityTerms: ResponsibilityTerm[];
+  selectedTermId: string | null;
+  setSelectedTermId: (id: string | null) => void;
+  addTermTemplate: (template: Omit<TermTemplate, 'id' | 'orgId' | 'updatedAt'>) => void;
+  updateTermTemplate: (id: string, template: Partial<TermTemplate>) => void;
+  deleteTermTemplate: (id: string) => void;
+  toggleTermTemplateActive: (id: string) => void;
 
   // Actions - Locations
   addLocation: (loc: Omit<LocationItem, 'id' | 'orgId'>) => void;
@@ -136,6 +153,9 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [categories, setCategories] = useState<AssetCategory[]>(INITIAL_CATEGORIES);
   const [tags, setTags] = useState<Tag[]>(INITIAL_TAGS);
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [termTemplates, setTermTemplates] = useState<TermTemplate[]>(INITIAL_TERM_TEMPLATES);
+  const [responsibilityTerms, setResponsibilityTerms] = useState<ResponsibilityTerm[]>(INITIAL_RESPONSIBILITY_TERMS);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
 
   // Toasts & Audit Logs
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -184,6 +204,8 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const orgCategories = useMemo(() => categories.filter((c) => c.orgId === currentOrgId), [categories, currentOrgId]);
   const orgTags = useMemo(() => tags.filter((t) => t.orgId === currentOrgId), [tags, currentOrgId]);
   const orgUsers = useMemo(() => users.filter((u) => u.orgId === currentOrgId), [users, currentOrgId]);
+  const orgTermTemplates = useMemo(() => termTemplates.filter((t) => t.orgId === currentOrgId), [termTemplates, currentOrgId]);
+  const orgResponsibilityTerms = useMemo(() => responsibilityTerms.filter((rt) => rt.orgId === currentOrgId), [responsibilityTerms, currentOrgId]);
 
   // Handlers
   const addAsset = (data: Omit<Asset, 'id' | 'orgId'>) => {
@@ -324,17 +346,55 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast('info', 'Colaborador Removido', `${target?.nome || ''} foi desativado.`);
   };
 
+  const addTermTemplate = (data: Omit<TermTemplate, 'id' | 'orgId' | 'updatedAt'>) => {
+    const newTpl: TermTemplate = {
+      ...data,
+      id: `tpl-${Date.now()}`,
+      orgId: currentOrgId,
+      updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    };
+    setTermTemplates((prev) => [newTpl, ...prev]);
+    addToast('success', 'Modelo de Termo Criado', `O modelo "${newTpl.nome}" foi cadastrado.`);
+  };
+
+  const updateTermTemplate = (id: string, partial: Partial<TermTemplate>) => {
+    setTermTemplates((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, ...partial, updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19) }
+          : t
+      )
+    );
+    addToast('success', 'Modelo Atualizado', 'Modelo de Termo salvo com sucesso.');
+  };
+
+  const deleteTermTemplate = (id: string) => {
+    setTermTemplates((prev) => prev.filter((t) => t.id !== id));
+    addToast('info', 'Modelo Removido', 'O modelo de termo foi removido.');
+  };
+
+  const toggleTermTemplateActive = (id: string) => {
+    setTermTemplates((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ativo: !t.ativo } : t))
+    );
+  };
+
   const registerMovement = (data: {
     assetId: string;
     tipo: MovementType;
     novoResponsavelId?: string;
     novaLocalizacaoId?: string;
     motivo: string;
-  }) => {
+    templateId?: string;
+    acessoriosSelecionados?: string[];
+  }): string | undefined => {
     const targetAsset = assets.find((a) => a.id === data.assetId);
-    if (!targetAsset) return;
+    if (!targetAsset) return undefined;
 
     let targetCollab = data.novoResponsavelId ? collaborators.find((c) => c.id === data.novoResponsavelId) : undefined;
+    if (!targetCollab && targetAsset.responsavelId) {
+      targetCollab = collaborators.find((c) => c.id === targetAsset.responsavelId);
+    }
     
     // Find location path if specified
     let newLocationPath = targetAsset.locationPath;
@@ -365,14 +425,61 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       })
     );
 
+    const movementId = `mov-${Date.now()}`;
+    const nowIso = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    let createdTermId: string | undefined = undefined;
+
+    // Check if a Responsibility Term should be generated
+    const templateToUse =
+      (data.templateId && termTemplates.find((t) => t.id === data.templateId)) ||
+      termTemplates.find((t) => t.ativo && t.tiposMovimentacao.includes(data.tipo));
+
+    if (templateToUse && targetCollab) {
+      createdTermId = `term-${Date.now()}`;
+      const accessoriesDelivered = (targetAsset.acessorios || []).map((acc) => ({
+        id: acc.id,
+        nome: acc.nome,
+        incluso: data.acessoriosSelecionados ? data.acessoriosSelecionados.includes(acc.id) : true,
+      }));
+
+      const snapshot = createTermSnapshot({
+        organization: currentOrg,
+        collaborator: targetCollab,
+        asset: targetAsset,
+        movementType: data.tipo,
+        movementDate: nowIso,
+        locationPath: newLocationPath,
+        motivo: data.motivo,
+        operatorName: 'Carlos Eduardo Silva',
+        accessoriesDelivered,
+        template: templateToUse,
+      });
+
+      const newTerm: ResponsibilityTerm = {
+        id: createdTermId,
+        codigo: `TR-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        movementId,
+        assetId: targetAsset.id,
+        collaboratorId: targetCollab.id,
+        templateId: templateToUse.id,
+        createdBy: 'Carlos Eduardo Silva',
+        createdAt: nowIso,
+        snapshot,
+        orgId: currentOrgId,
+      };
+
+      setResponsibilityTerms((prev) => [newTerm, ...prev]);
+    }
+
     // Create Movement history record
     const newMovement: Movement = {
-      id: `mov-${Date.now()}`,
+      id: movementId,
       assetId: targetAsset.id,
       assetName: targetAsset.nome,
       assetPatrimonio: targetAsset.patrimonio,
       tipo: data.tipo,
-      data: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      data: nowIso,
       responsavelAnterior: previousResp,
       novoResponsavel: data.tipo === 'Devolução' ? undefined : targetCollab?.nome,
       localizacaoAnterior: previousLoc,
@@ -380,6 +487,8 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       usuarioRegistro: 'Carlos Eduardo Silva',
       motivo: data.motivo,
       orgId: currentOrgId,
+      responsibilityTermId: createdTermId,
+      acessoriosEnvolvidos: data.acessoriosSelecionados,
     };
 
     setMovements((prev) => [newMovement, ...prev]);
@@ -387,8 +496,12 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addToast(
       'success',
       `Movimentação: ${data.tipo}`,
-      `O ativo ${targetAsset.patrimonio} foi movimentado com sucesso.`
+      createdTermId
+        ? `O ativo ${targetAsset.patrimonio} foi movimentado e o Termo de Responsabilidade (A4) foi gerado!`
+        : `O ativo ${targetAsset.patrimonio} foi movimentado com sucesso.`
     );
+
+    return createdTermId;
   };
 
   const addLocation = (data: Omit<LocationItem, 'id' | 'orgId'>) => {
@@ -448,6 +561,10 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         categories: orgCategories,
         tags: orgTags,
         users: orgUsers,
+        termTemplates: orgTermTemplates,
+        responsibilityTerms: orgResponsibilityTerms,
+        selectedTermId,
+        setSelectedTermId,
         addAsset,
         updateAsset,
         deleteAsset,
@@ -459,6 +576,10 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateCollaborator,
         deleteCollaborator,
         registerMovement,
+        addTermTemplate,
+        updateTermTemplate,
+        deleteTermTemplate,
+        toggleTermTemplateActive,
         addLocation,
         addCategory,
         addTag,

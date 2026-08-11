@@ -3,6 +3,7 @@ import { useInventy } from '../../context/InventyContext';
 import { AssetStatusBadge, MovementTypeBadge } from '../common/Badge';
 import { ApplyPackageModal } from './ApplyPackageModal';
 import { AssetMovementModal } from './AssetMovementModal';
+import { ResponsibilityTermViewerModal } from '../responsibility-terms/ResponsibilityTermViewerModal';
 import {
   Laptop,
   ArrowLeft,
@@ -23,6 +24,7 @@ import {
   Clock,
   Building,
   Info,
+  FileCheck2,
 } from 'lucide-react';
 
 interface AssetDetailViewProps {
@@ -39,6 +41,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
 
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [movementModalOpen, setMovementModalOpen] = useState(false);
+  const [viewerTermId, setViewerTermId] = useState<string | null>(null);
 
   // Masked credentials visibility state
   const [revealedCreds, setRevealedCreds] = useState<Record<string, boolean>>({});
@@ -535,6 +538,23 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
                     <p className="text-slate-600 text-[11px]">
                       <strong>Motivo:</strong> {mov.motivo}
                     </p>
+
+                    {mov.responsibilityTermId && (
+                      <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                        <span className="text-[10px] text-emerald-800 font-bold flex items-center gap-1">
+                          <FileCheck2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Termo A4 Registrado
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setViewerTermId(mov.responsibilityTermId || null)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 font-bold text-[11px] rounded transition shadow-2xs"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Ver Termo (A4)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -591,6 +611,11 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
         isOpen={movementModalOpen}
         onClose={() => setMovementModalOpen(false)}
         asset={asset}
+      />
+
+      <ResponsibilityTermViewerModal
+        termId={viewerTermId}
+        onClose={() => setViewerTermId(null)}
       />
     </div>
   );
