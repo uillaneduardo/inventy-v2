@@ -66,9 +66,11 @@ export interface Collaborator {
   assignedAssetsCount?: number;
   enderecoLogradouro?: string;
   enderecoNumero?: string;
+  enderecoComplemento?: string;
   enderecoBairro?: string;
   enderecoCidade?: string;
   enderecoEstado?: string;
+  enderecoCep?: string;
 }
 
 export type LocationType = 'unidade' | 'predio' | 'andar' | 'sala';
@@ -176,6 +178,7 @@ export interface TermFieldOptions {
   showPatrimonio: boolean;
   showAccessories: boolean;
   showObservations: boolean;
+  showAssetValue: boolean;
 }
 
 export interface TermTemplate {

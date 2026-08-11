@@ -101,6 +101,7 @@ interface InventyContextType {
     motivo: string;
     templateId?: string;
     acessoriosSelecionados?: string[];
+    generateResponsibilityTerm?: boolean;
   }) => string | undefined;
 
   // Responsibility Terms
@@ -387,6 +388,7 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     motivo: string;
     templateId?: string;
     acessoriosSelecionados?: string[];
+    generateResponsibilityTerm?: boolean;
   }): string | undefined => {
     const targetAsset = assets.find((a) => a.id === data.assetId);
     if (!targetAsset) return undefined;
@@ -430,12 +432,15 @@ export const InventyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     let createdTermId: string | undefined = undefined;
 
-    // Check if a Responsibility Term should be generated
-    const templateToUse =
-      (data.templateId && termTemplates.find((t) => t.id === data.templateId)) ||
-      termTemplates.find((t) => t.ativo && t.tiposMovimentacao.includes(data.tipo));
+    // Rule 1: Only generate term if generateResponsibilityTerm === true
+    const shouldGenerateTerm = data.generateResponsibilityTerm === true;
 
-    if (templateToUse && targetCollab) {
+    const templateToUse = shouldGenerateTerm
+      ? (data.templateId && termTemplates.find((t) => t.id === data.templateId)) ||
+        termTemplates.find((t) => t.ativo && t.tiposMovimentacao.includes(data.tipo))
+      : undefined;
+
+    if (shouldGenerateTerm && templateToUse && targetCollab) {
       createdTermId = `term-${Date.now()}`;
       const accessoriesDelivered = (targetAsset.acessorios || []).map((acc) => ({
         id: acc.id,

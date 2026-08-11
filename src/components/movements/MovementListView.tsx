@@ -1,24 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useInventy } from '../../context/InventyContext';
 import { MovementTypeBadge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import { MovementType } from '../../types';
-import { ArrowLeftRight, Search, Plus, User, Calendar, CheckCircle2, Laptop, Eye, FileCheck2 } from 'lucide-react';
 import { ResponsibilityTermViewerModal } from '../responsibility-terms/ResponsibilityTermViewerModal';
+import { Search, Plus, CheckCircle2, FileCheck2, AlertCircle, FileText } from 'lucide-react';
 
 export const MovementListView: React.FC = () => {
-  const { movements, assets, collaborators, registerMovement, currentOrg, addToast } = useInventy();
+  const { movements, assets, collaborators, termTemplates, registerMovement, currentOrg, addToast, setSelectedTermId } = useInventy();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('todos');
   const [isNewMovementModalOpen, setIsNewMovementModalOpen] = useState(false);
-  const [viewerTermId, setViewerTermId] = useState<string | null>(null);
 
   // Form State
   const [selectedAssetId, setSelectedAssetId] = useState(assets[0]?.id || '');
   const [tipo, setTipo] = useState<MovementType>('Atribuição');
   const [novoResponsavelId, setNovoResponsavelId] = useState(collaborators[0]?.id || '');
   const [motivo, setMotivo] = useState('');
+  const [gerarTermo, setGerarTermo] = useState<boolean>(true);
+
+  // Filter templates: active and compatible with selected movement type
+  const validTemplates = termTemplates.filter(
+    (t) => t.ativo && t.tiposMovimentacao.includes(tipo)
+  );
+
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
+    validTemplates[0]?.id || ''
+  );
+
+  const [createdTermId, setCreatedTermId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (validTemplates.length > 0) {
+      if (!validTemplates.some((t) => t.id === selectedTemplateId)) {
+        setSelectedTemplateId(validTemplates[0].id);
+      }
+    } else {
+      setSelectedTemplateId('');
+    }
+  }, [tipo, termTemplates]);
 
   const filteredMovements = movements.filter((m) => {
     const matchSearch =
@@ -38,16 +59,31 @@ export const MovementListView: React.FC = () => {
       addToast('error', 'Selecione um Ativo', 'Escolha o ativo a ser movimentado.');
       return;
     }
+    if (!motivo.trim()) {
+      addToast('error', 'Motivo Obrigatório', 'Informe a razão ou observação da movimentação.');
+      return;
+    }
 
-    registerMovement({
+    const targetAsset = assets.find((a) => a.id === selectedAssetId);
+    const selectedAccessories = (targetAsset?.acessorios || []).map((a) => a.id);
+    const canGenerateTerm = gerarTermo && validTemplates.length > 0;
+
+    const termId = registerMovement({
       assetId: selectedAssetId,
       tipo,
       novoResponsavelId: tipo === 'Devolução' ? undefined : novoResponsavelId,
       motivo,
+      acessoriosSelecionados: selectedAccessories,
+      templateId: selectedTemplateId,
+      generateResponsibilityTerm: canGenerateTerm,
     });
 
     setIsNewMovementModalOpen(false);
     setMotivo('');
+
+    if (termId && canGenerateTerm) {
+      setCreatedTermId(termId);
+    }
   };
 
   return (
@@ -62,8 +98,11 @@ export const MovementListView: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsNewMovementModalOpen(true)}
-          className="bg-slate-900 hover:bg-slate-800 text-white shadow-xs rounded-lg px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          onClick={() => {
+            if (assets.length > 0) setSelectedAssetId(assets[0].id);
+            setIsNewMovementModalOpen(true);
+          }}
+          className="bg-slate-900 hover:bg-slate-800 text-white shadow-xs rounded-lg px-3.5 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4 text-emerald-400" /> Registrar Movimentação
         </button>
@@ -135,15 +174,13 @@ export const MovementListView: React.FC = () => {
                   <td className="py-3 px-4">
                     {mov.responsibilityTermId ? (
                       <button
-                        type="button"
-                        onClick={() => setViewerTermId(mov.responsibilityTermId || null)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] rounded transition shadow-2xs"
+                        onClick={() => setSelectedTermId(mov.responsibilityTermId!)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-semibold text-[11px] transition-colors cursor-pointer"
                       >
-                        <FileCheck2 className="w-3 h-3 text-emerald-600" />
-                        <span>Ver Termo</span>
+                        <FileText className="w-3 h-3" /> Ver Termo
                       </button>
                     ) : (
-                      <span className="text-slate-400 text-[10px] italic">—</span>
+                      <span className="text-slate-400 text-[11px]">Sem termo</span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-right text-slate-500 text-[11px] font-medium">{mov.usuarioRegistro}</td>
@@ -186,7 +223,7 @@ export const MovementListView: React.FC = () => {
                   key={t}
                   type="button"
                   onClick={() => setTipo(t)}
-                  className={`py-2 px-3 rounded-lg border text-xs font-semibold text-center transition-all ${
+                  className={`py-2 px-3 rounded-lg border text-xs font-semibold text-center transition-all cursor-pointer ${
                     tipo === t
                       ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -227,29 +264,83 @@ export const MovementListView: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          {/* Gerar Termo Option */}
+          <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-emerald-950">Gerar Termo de Responsabilidade (A4)</p>
+                  <p className="text-[10px] text-emerald-800">
+                    Cria o documento oficial com os dados do colaborador, ativo e data.
+                  </p>
+                </div>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={gerarTermo}
+                onChange={(e) => setGerarTermo(e.target.checked)}
+                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+              />
+            </div>
+
+            {/* Model Selection if gerarTermo is checked */}
+            {gerarTermo && (
+              <div className="pt-2 border-t border-emerald-200/60">
+                {validTemplates.length > 0 ? (
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-950 mb-1">
+                      Modelo do Termo *
+                    </label>
+                    <select
+                      value={selectedTemplateId}
+                      onChange={(e) => setSelectedTemplateId(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                    >
+                      {validTemplates.map((tpl) => (
+                        <option key={tpl.id} value={tpl.id}>
+                          {tpl.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-2 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Nenhum modelo de termo ativo disponível para {tipo}. A movimentação será registrada sem geração de termo.</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setIsNewMovementModalOpen(false)}
-              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors"
+              className="w-full sm:w-auto px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Efetivar Operação
+              {gerarTermo && validTemplates.length > 0 ? 'Efetivar & Gerar Termo' : 'Efetivar Operação'}
             </button>
           </div>
         </form>
       </Modal>
 
-      <ResponsibilityTermViewerModal
-        termId={viewerTermId}
-        onClose={() => setViewerTermId(null)}
-      />
+      {/* Viewing Generated Term */}
+      {createdTermId && (
+        <ResponsibilityTermViewerModal
+          termId={createdTermId}
+          onClose={() => setCreatedTermId(null)}
+        />
+      )}
     </div>
   );
 };

@@ -2,31 +2,25 @@ import React, { useState } from 'react';
 import { useInventy } from '../../context/InventyContext';
 import { Modal } from '../common/Modal';
 import { Collaborator } from '../../types';
-import { ResponsibilityTermViewerModal } from '../responsibility-terms/ResponsibilityTermViewerModal';
+import { formatCollaboratorAddress } from '../../utils/termUtils';
 import {
   Users,
   Search,
   Plus,
   Mail,
   Phone,
-  Building2,
   Laptop,
   CheckCircle2,
   UserCheck,
-  Shield,
-  Briefcase,
-  FileCheck2,
-  Eye,
   MapPin,
 } from 'lucide-react';
 
 export const CollaboratorListView: React.FC = () => {
-  const { collaborators, assets, responsibilityTerms, addCollaborator, currentOrg, setSelectedAssetId, setActiveTab } = useInventy();
+  const { collaborators, assets, addCollaborator, currentOrg, setSelectedAssetId, setActiveTab } = useInventy();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCollabForModal, setSelectedCollabForModal] = useState<Collaborator | null>(null);
   const [isNewCollabModalOpen, setIsNewCollabModalOpen] = useState(false);
-  const [viewerTermId, setViewerTermId] = useState<string | null>(null);
 
   // New Collaborator Form
   const [nome, setNome] = useState('');
@@ -37,6 +31,15 @@ export const CollaboratorListView: React.FC = () => {
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [status, setStatus] = useState<'Ativo' | 'Inativo' | 'Licença'>('Ativo');
+
+  // Address fields
+  const [enderecoLogradouro, setEnderecoLogradouro] = useState('');
+  const [enderecoNumero, setEnderecoNumero] = useState('');
+  const [enderecoComplemento, setEnderecoComplemento] = useState('');
+  const [enderecoBairro, setEnderecoBairro] = useState('');
+  const [enderecoCidade, setEnderecoCidade] = useState('');
+  const [enderecoEstado, setEnderecoEstado] = useState('');
+  const [enderecoCep, setEnderecoCep] = useState('');
 
   const filteredCollaborators = collaborators.filter((c) => {
     const query = searchTerm.toLowerCase();
@@ -61,6 +64,13 @@ export const CollaboratorListView: React.FC = () => {
       telefone: telefone || '(11) 90000-0000',
       status,
       foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+      enderecoLogradouro: enderecoLogradouro || undefined,
+      enderecoNumero: enderecoNumero || undefined,
+      enderecoComplemento: enderecoComplemento || undefined,
+      enderecoBairro: enderecoBairro || undefined,
+      enderecoCidade: enderecoCidade || undefined,
+      enderecoEstado: enderecoEstado || undefined,
+      enderecoCep: enderecoCep || undefined,
     });
 
     setIsNewCollabModalOpen(false);
@@ -71,6 +81,13 @@ export const CollaboratorListView: React.FC = () => {
     setDepartamento('');
     setEmail('');
     setTelefone('');
+    setEnderecoLogradouro('');
+    setEnderecoNumero('');
+    setEnderecoComplemento('');
+    setEnderecoBairro('');
+    setEnderecoCidade('');
+    setEnderecoEstado('');
+    setEnderecoCep('');
   };
 
   return (
@@ -86,7 +103,7 @@ export const CollaboratorListView: React.FC = () => {
 
         <button
           onClick={() => setIsNewCollabModalOpen(true)}
-          className="bg-slate-900 hover:bg-slate-800 text-white shadow-xs rounded-lg px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          className="bg-slate-900 hover:bg-slate-800 text-white shadow-xs rounded-lg px-3.5 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4 text-emerald-400" /> Cadastrar Colaborador
         </button>
@@ -239,13 +256,10 @@ export const CollaboratorListView: React.FC = () => {
                 <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                   CPF: {selectedCollabForModal.cpf} • Unidade: {selectedCollabForModal.unidade}
                 </p>
-                {selectedCollabForModal.enderecoLogradouro && (
-                  <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-slate-400" />
-                    <span>
-                      {selectedCollabForModal.enderecoLogradouro}, {selectedCollabForModal.enderecoNumero} -{' '}
-                      {selectedCollabForModal.enderecoBairro}, {selectedCollabForModal.enderecoCidade}/{selectedCollabForModal.enderecoEstado}
-                    </span>
+                {formatCollaboratorAddress(selectedCollabForModal) && (
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
+                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>{formatCollaboratorAddress(selectedCollabForModal)}</span>
                   </p>
                 )}
               </div>
@@ -290,61 +304,9 @@ export const CollaboratorListView: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* Termos de Responsabilidade Vinculados */}
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <FileCheck2 className="w-4 h-4 text-emerald-600" />
-                <span>Termos de Responsabilidade (A4):</span>
-              </h4>
-
-              {responsibilityTerms.filter((t) => t.collaboratorId === selectedCollabForModal.id).length === 0 ? (
-                <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
-                  Nenhum termo de responsabilidade registrado para este colaborador.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {responsibilityTerms
-                    .filter((t) => t.collaboratorId === selectedCollabForModal.id)
-                    .map((term) => (
-                      <div
-                        key={term.id}
-                        className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-emerald-800">{term.codigo}</span>
-                            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-white border border-slate-200">
-                              {term.snapshot.movement.type}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-600 mt-0.5">
-                            Ativo: <strong className="text-slate-800">{term.snapshot.asset.patrimonio}</strong> ({term.snapshot.asset.name})
-                          </p>
-                          <p className="text-[10px] text-slate-400">Data: {term.createdAt.substring(0, 10)}</p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setViewerTermId(term.id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 font-bold text-xs rounded transition shadow-2xs"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Ver Termo</span>
-                        </button>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
           </div>
         </Modal>
       )}
-
-      <ResponsibilityTermViewerModal
-        termId={viewerTermId}
-        onClose={() => setViewerTermId(null)}
-      />
 
       {/* Modal: Novo Colaborador */}
       <Modal
@@ -367,7 +329,7 @@ export const CollaboratorListView: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-800 mb-1">CPF *</label>
               <input
@@ -392,7 +354,7 @@ export const CollaboratorListView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-800 mb-1">Departamento *</label>
               <input
@@ -417,7 +379,7 @@ export const CollaboratorListView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-800 mb-1">E-mail Corporativo *</label>
               <input
@@ -441,17 +403,104 @@ export const CollaboratorListView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          {/* Endereço Residencial (Opcional) */}
+          <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200 space-y-2 mt-2">
+            <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              Endereço Residencial (Opcional - Usado nos Termos A4)
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] text-slate-600 mb-0.5">Logradouro / Rua</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Av. Paulista"
+                  value={enderecoLogradouro}
+                  onChange={(e) => setEnderecoLogradouro(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-600 mb-0.5">Número</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 1000"
+                  value={enderecoNumero}
+                  onChange={(e) => setEnderecoNumero(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] text-slate-600 mb-0.5">Complemento</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Apto 42 / Bloco B"
+                  value={enderecoComplemento}
+                  onChange={(e) => setEnderecoComplemento(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-600 mb-0.5">Bairro</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Bela Vista"
+                  value={enderecoBairro}
+                  onChange={(e) => setEnderecoBairro(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label className="block text-[11px] text-slate-600 mb-0.5">Cidade</label>
+                <input
+                  type="text"
+                  placeholder="Ex: São Paulo"
+                  value={enderecoCidade}
+                  onChange={(e) => setEnderecoCidade(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-600 mb-0.5">Estado (UF)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: SP"
+                  value={enderecoEstado}
+                  onChange={(e) => setEnderecoEstado(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-600 mb-0.5">CEP</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 01310-100"
+                  value={enderecoCep}
+                  onChange={(e) => setEnderecoCep(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={() => setIsNewCollabModalOpen(false)}
-              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors"
+              className="w-full sm:w-auto px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               Salvar Colaborador

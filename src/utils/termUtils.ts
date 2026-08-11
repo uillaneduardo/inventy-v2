@@ -7,6 +7,71 @@ import {
   TermSnapshotData,
 } from '../types';
 
+export function formatCollaboratorAddress(collaborator: Partial<Collaborator>): string {
+  const parts: string[] = [];
+
+  let line1 = '';
+  if (collaborator.enderecoLogradouro?.trim()) {
+    line1 += collaborator.enderecoLogradouro.trim();
+    if (collaborator.enderecoNumero?.trim()) {
+      line1 += `, nº ${collaborator.enderecoNumero.trim()}`;
+    }
+    if (collaborator.enderecoComplemento?.trim()) {
+      line1 += ` - ${collaborator.enderecoComplemento.trim()}`;
+    }
+  }
+  if (line1) parts.push(line1);
+
+  if (collaborator.enderecoBairro?.trim()) {
+    parts.push(collaborator.enderecoBairro.trim());
+  }
+
+  let cityState = '';
+  if (collaborator.enderecoCidade?.trim()) {
+    cityState += collaborator.enderecoCidade.trim();
+    if (collaborator.enderecoEstado?.trim()) {
+      cityState += ` - ${collaborator.enderecoEstado.trim()}`;
+    }
+  } else if (collaborator.enderecoEstado?.trim()) {
+    cityState += collaborator.enderecoEstado.trim();
+  }
+  if (cityState) parts.push(cityState);
+
+  if (collaborator.enderecoCep?.trim()) {
+    parts.push(`CEP: ${collaborator.enderecoCep.trim()}`);
+  }
+
+  return parts.join(', ');
+}
+
+export function getSignerTitles(movementType: MovementType): {
+  operatorTitle: string;
+  collaboratorTitle: string;
+} {
+  switch (movementType) {
+    case 'Atribuição':
+      return {
+        operatorTitle: 'Responsável pela liberação',
+        collaboratorTitle: 'Colaborador recebedor',
+      };
+    case 'Devolução':
+      return {
+        operatorTitle: 'Responsável pelo recebimento',
+        collaboratorTitle: 'Colaborador responsável pela devolução',
+      };
+    case 'Transferência':
+      return {
+        operatorTitle: 'Responsável pela transferência',
+        collaboratorTitle: 'Colaborador recebedor',
+      };
+    default:
+      return {
+        operatorTitle: 'Responsável pela movimentação',
+        collaboratorTitle: 'Colaborador',
+      };
+  }
+}
+
 export function interpolateText(
   templateText: string,
   data: {
@@ -20,14 +85,7 @@ export function interpolateText(
 ): string {
   const { organization, collaborator, asset, movementType, movementDate, operatorName } = data;
 
-  const fullAddress = [
-    collaborator.enderecoLogradouro,
-    collaborator.enderecoNumero ? `nº ${collaborator.enderecoNumero}` : '',
-    collaborator.enderecoBairro ? `- ${collaborator.enderecoBairro}` : '',
-    collaborator.enderecoCidade ? `${collaborator.enderecoCidade}/${collaborator.enderecoEstado || 'SP'}` : '',
-  ]
-    .filter(Boolean)
-    .join(', ');
+  const fullAddress = formatCollaboratorAddress(collaborator);
 
   const replacements: Record<string, string> = {
     '{{organization.name}}': organization.name || 'Empresa',
@@ -67,6 +125,7 @@ export function createTermSnapshot(params: {
   locationPath: string;
   motivo: string;
   operatorName: string;
+  operatorTitle?: string;
   accessoriesDelivered: { id: string; nome: string; incluso: boolean }[];
   template: TermTemplate;
 }): TermSnapshotData {
@@ -79,6 +138,7 @@ export function createTermSnapshot(params: {
     locationPath,
     motivo,
     operatorName,
+    operatorTitle: customOperatorTitle,
     accessoriesDelivered,
     template,
   } = params;
@@ -103,14 +163,8 @@ export function createTermSnapshot(params: {
       })
     : '';
 
-  const fullAddress = [
-    collaborator.enderecoLogradouro,
-    collaborator.enderecoNumero ? `nº ${collaborator.enderecoNumero}` : '',
-    collaborator.enderecoBairro ? `- ${collaborator.enderecoBairro}` : '',
-    collaborator.enderecoCidade ? `${collaborator.enderecoCidade}/${collaborator.enderecoEstado || 'SP'}` : '',
-  ]
-    .filter(Boolean)
-    .join(', ');
+  const fullAddress = formatCollaboratorAddress(collaborator);
+  const defaultSignerTitles = getSignerTitles(movementType);
 
   return {
     organization: {
@@ -158,9 +212,9 @@ export function createTermSnapshot(params: {
     },
     signers: {
       operatorName,
-      operatorTitle: 'Gestão de Tecnologia / Ativos',
+      operatorTitle: customOperatorTitle || defaultSignerTitles.operatorTitle,
       collaboratorName: collaborator.nome,
-      collaboratorTitle: `${collaborator.cargo} — ${collaborator.departamento}`,
+      collaboratorTitle: defaultSignerTitles.collaboratorTitle,
     },
   };
 }

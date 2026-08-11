@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useInventy } from '../../context/InventyContext';
 import { Modal } from '../common/Modal';
 import { Asset, MovementType } from '../../types';
 import { ResponsibilityTermViewerModal } from '../responsibility-terms/ResponsibilityTermViewerModal';
-import { ArrowLeftRight, UserCheck, MapPin, CheckCircle2, FileCheck2, ShieldCheck } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, FileCheck2, AlertCircle } from 'lucide-react';
 
 interface AssetMovementModalProps {
   isOpen: boolean;
@@ -22,7 +22,27 @@ export const AssetMovementModal: React.FC<AssetMovementModalProps> = ({ isOpen, 
     (asset.acessorios || []).map((a) => a.id)
   );
 
+  // Filter templates: active and compatible with selected movement type
+  const validTemplates = termTemplates.filter(
+    (t) => t.ativo && t.tiposMovimentacao.includes(tipo)
+  );
+
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
+    validTemplates[0]?.id || ''
+  );
+
   const [createdTermId, setCreatedTermId] = useState<string | null>(null);
+
+  // Keep selectedTemplateId synchronized with available valid templates for selected movement type
+  useEffect(() => {
+    if (validTemplates.length > 0) {
+      if (!validTemplates.some((t) => t.id === selectedTemplateId)) {
+        setSelectedTemplateId(validTemplates[0].id);
+      }
+    } else {
+      setSelectedTemplateId('');
+    }
+  }, [tipo, termTemplates]);
 
   const toggleAccessory = (id: string) => {
     if (selectedAccessories.includes(id)) {
@@ -43,15 +63,19 @@ export const AssetMovementModal: React.FC<AssetMovementModalProps> = ({ isOpen, 
       return;
     }
 
+    const canGenerateTerm = gerarTermo && validTemplates.length > 0;
+
     const termId = registerMovement({
       assetId: asset.id,
       tipo,
       novoResponsavelId: tipo === 'Devolução' ? undefined : novoResponsavelId,
       motivo,
       acessoriosSelecionados: selectedAccessories,
+      templateId: selectedTemplateId,
+      generateResponsibilityTerm: canGenerateTerm,
     });
 
-    if (termId && gerarTermo) {
+    if (termId && canGenerateTerm) {
       setCreatedTermId(termId);
     } else {
       onClose();
@@ -131,7 +155,7 @@ export const AssetMovementModal: React.FC<AssetMovementModalProps> = ({ isOpen, 
               <label className="block text-xs font-bold text-slate-800">
                 Acessórios Entregues / Devolvidos no Termo
               </label>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 {asset.acessorios.map((acc) => {
                   const checked = selectedAccessories.includes(acc.id);
                   return (
@@ -164,40 +188,71 @@ export const AssetMovementModal: React.FC<AssetMovementModalProps> = ({ isOpen, 
           </div>
 
           {/* Gerar Termo Option */}
-          <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-emerald-950">Gerar Termo de Responsabilidade (A4)</p>
-                <p className="text-[10px] text-emerald-800">
-                  Cria o documento oficial com os dados do colaborador, ativo e data.
-                </p>
+          <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-emerald-950">Gerar Termo de Responsabilidade (A4)</p>
+                  <p className="text-[10px] text-emerald-800">
+                    Cria o documento oficial com os dados do colaborador, ativo e data.
+                  </p>
+                </div>
               </div>
+
+              <input
+                type="checkbox"
+                checked={gerarTermo}
+                onChange={(e) => setGerarTermo(e.target.checked)}
+                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+              />
             </div>
 
-            <input
-              type="checkbox"
-              checked={gerarTermo}
-              onChange={(e) => setGerarTermo(e.target.checked)}
-              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-            />
+            {/* Model Selection if gerarTermo is checked */}
+            {gerarTermo && (
+              <div className="pt-2 border-t border-emerald-200/60">
+                {validTemplates.length > 0 ? (
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-950 mb-1">
+                      Modelo do Termo *
+                    </label>
+                    <select
+                      value={selectedTemplateId}
+                      onChange={(e) => setSelectedTemplateId(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                    >
+                      {validTemplates.map((tpl) => (
+                        <option key={tpl.id} value={tpl.id}>
+                          {tpl.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-2 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Nenhum modelo de termo ativo disponível para {tipo}. A movimentação será registrada sem geração de termo.</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Confirmar & Gerar Termo
+              {gerarTermo && validTemplates.length > 0 ? 'Confirmar & Gerar Termo' : 'Confirmar Movimentação'}
             </button>
           </div>
         </form>

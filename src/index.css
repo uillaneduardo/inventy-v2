@@ -49,3 +49,44 @@
   transform: translate(-50%, -100%) scale(1.03);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1) !important;
 }
+
+/* Print Styles for Inventy A4 Responsibility Term */
+@media print {
+  /* Hide all app chrome, headers, sidebars, toast containers, modal backdrops, and action buttons */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the printable document container */
+  .inventy-print-document,
+  .inventy-print-document * {
+    visibility: visible;
+  }
+
+  /* Position the document at top-left of printable page */
+  .inventy-print-document {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Hide print-hidden items explicitly */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+}

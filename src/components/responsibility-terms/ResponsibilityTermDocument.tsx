@@ -34,7 +34,7 @@ export const ResponsibilityTermDocument: React.FC<ResponsibilityTermDocumentProp
   };
 
   return (
-    <div className="bg-white text-slate-900 font-sans p-8 sm:p-12 max-w-[210mm] min-h-[297mm] mx-auto shadow-lg print:shadow-none print:p-0 print:m-0 border border-slate-200 print:border-none flex flex-col justify-between selection:bg-slate-200">
+    <div className="inventy-print-document bg-white text-slate-900 font-sans p-8 sm:p-12 max-w-[210mm] min-h-[297mm] mx-auto shadow-lg print:shadow-none print:p-0 print:m-0 border border-slate-200 print:border-none flex flex-col justify-between selection:bg-slate-200">
       <div>
         {/* Header Org + Logo */}
         <div className="border-b-2 border-slate-900 pb-4 mb-6">
@@ -69,7 +69,7 @@ export const ResponsibilityTermDocument: React.FC<ResponsibilityTermDocumentProp
                 {organization.name} — CNPJ: {organization.cnpj}
               </p>
               <p className="text-[10px] text-slate-500">
-                Gestão de Ativos & Tecnologia da Informação
+                Gestão e Controle de Ativos
               </p>
             </div>
             {code && (
@@ -172,7 +172,7 @@ export const ResponsibilityTermDocument: React.FC<ResponsibilityTermDocumentProp
         <div className="mb-6 border border-slate-200 rounded-lg p-3 bg-white">
           <h2 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-100 pb-1">
             <FileCheck2 className="w-3.5 h-3.5 text-slate-700" />
-            <span>2. Especificações do Ativo de TI</span>
+            <span>2. Especificações do Ativo</span>
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
@@ -207,7 +207,7 @@ export const ResponsibilityTermDocument: React.FC<ResponsibilityTermDocumentProp
               <span className="text-slate-800">{asset.categoriaNome}</span>
             </div>
 
-            {asset.valor && asset.valor > 0 && (
+            {template.camposVisiveis.showAssetValue && asset.valor && asset.valor > 0 && (
               <div>
                 <span className="text-slate-400 text-[10px] block uppercase font-mono">Valor Estimado:</span>
                 <span className="text-slate-800 font-mono">
